@@ -1,0 +1,20 @@
+{
+  "name": "sales-nav-scraper",
+  "version": "2.0.0",
+  "description": "Sales Nav Scraper v2 — robust lead extraction with Lusha & ContactOut enrichment",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "free-email-domains": "^1.2.23",
+    "playwright-core": "^1.48.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

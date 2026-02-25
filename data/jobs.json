@@ -1,0 +1,56 @@
+[
+  {
+    "id": "88640a5a-2268-4613-bd71-e0324389f592",
+    "name": "test #88640a5a",
+    "listName": "test",
+    "listUrl": "https://www.linkedin.com/sales/search/people?query=(recentSearchParam%3A(id%3A5494791068%2CdoLogHistory%3Atrue)%2Cfilters%3AList((type%3AINDUSTRY%2Cvalues%3AList((id%3A3190%2Ctext%3AApparel%2520%2526%2520Fashion%2CselectionType%3AINCLUDED)%2C(id%3A27%2Ctext%3ARetail%2CselectionType%3AINCLUDED)))%2C(type%3ACOMPANY_HEADCOUNT%2Cvalues%3AList((id%3AA%2Ctext%3ASelf-employed%2CselectionType%3AINCLUDED)%2C(id%3AB%2Ctext%3A1-10%2CselectionType%3AINCLUDED)))%2C(type%3ACURRENT_TITLE%2Cvalues%3AList((id%3A35%2Ctext%3AFounder%2CselectionType%3AINCLUDED)%2C(id%3A1%2Ctext%3AOwner%2CselectionType%3AINCLUDED)))%2C(type%3AYEARS_OF_EXPERIENCE%2Cvalues%3AList((id%3A1%2Ctext%3ALess%2520than%25201%2520year%2CselectionType%3AINCLUDED)))))&sessionId=5KcU9Y94T4%2BsyujlFQdsEg%3D%3D&viewAllFilters=true",
+    "urls": [
+      {
+        "urlNumber": 1,
+        "url": "https://www.linkedin.com/sales/search/people?query=(recentSearchParam%3A(id%3A5494791068%2CdoLogHistory%3Atrue)%2Cfilters%3AList((type%3AINDUSTRY%2Cvalues%3AList((id%3A3190%2Ctext%3AApparel%2520%2526%2520Fashion%2CselectionType%3AINCLUDED)%2C(id%3A27%2Ctext%3ARetail%2CselectionType%3AINCLUDED)))%2C(type%3ACOMPANY_HEADCOUNT%2Cvalues%3AList((id%3AA%2Ctext%3ASelf-employed%2CselectionType%3AINCLUDED)%2C(id%3AB%2Ctext%3A1-10%2CselectionType%3AINCLUDED)))%2C(type%3ACURRENT_TITLE%2Cvalues%3AList((id%3A35%2Ctext%3AFounder%2CselectionType%3AINCLUDED)%2C(id%3A1%2Ctext%3AOwner%2CselectionType%3AINCLUDED)))%2C(type%3AYEARS_OF_EXPERIENCE%2Cvalues%3AList((id%3A1%2Ctext%3ALess%2520than%25201%2520year%2CselectionType%3AINCLUDED)))))&sessionId=5KcU9Y94T4%2BsyujlFQdsEg%3D%3D&viewAllFilters=true"
+      }
+    ],
+    "inputMode": "single",
+    "status": "Stopped",
+    "total": 175,
+    "duplicatesSkipped": 0,
+    "filePath": "C:\\Users\\Hassan\\Downloads\\sales-nav-scraper-v2\\data\\test-1772024671338.csv",
+    "startedAt": "2026-02-25T13:04:31.340Z",
+    "urlIndex": 0,
+    "pageIndex": 7,
+    "lastSuccessfulUrlIndex": 0,
+    "lastSuccessfulPageIndex": 7,
+    "urlNumber": 1,
+    "lushaSeconds": 0.67,
+    "contactoutSeconds": 0.01,
+    "extractSeconds": 0.68,
+    "totalSeconds": 18.7
+  },
+  {
+    "id": "c2336178-1c26-457c-952f-ebed7774cf2e",
+    "name": "check #c2336178",
+    "listName": "check",
+    "listUrl": "https://www.linkedin.com/sales/search/people?query=(recentSearchParam%3A(id%3A5494791068%2CdoLogHistory%3Atrue)%2Cfilters%3AList((type%3AINDUSTRY%2Cvalues%3AList((id%3A3190%2Ctext%3AApparel%2520%2526%2520Fashion%2CselectionType%3AINCLUDED)%2C(id%3A27%2Ctext%3ARetail%2CselectionType%3AINCLUDED)))%2C(type%3ACOMPANY_HEADCOUNT%2Cvalues%3AList((id%3AA%2Ctext%3ASelf-employed%2CselectionType%3AINCLUDED)%2C(id%3AB%2Ctext%3A1-10%2CselectionType%3AINCLUDED)))%2C(type%3ACURRENT_TITLE%2Cvalues%3AList((id%3A35%2Ctext%3AFounder%2CselectionType%3AINCLUDED)%2C(id%3A1%2Ctext%3AOwner%2CselectionType%3AINCLUDED)))))&sessionId=5KcU9Y94T4%2BsyujlFQdsEg%3D%3D&viewAllFilters=true",
+    "urls": [
+      {
+        "urlNumber": 1,
+        "url": "https://www.linkedin.com/sales/search/people?query=(recentSearchParam%3A(id%3A5494791068%2CdoLogHistory%3Atrue)%2Cfilters%3AList((type%3AINDUSTRY%2Cvalues%3AList((id%3A3190%2Ctext%3AApparel%2520%2526%2520Fashion%2CselectionType%3AINCLUDED)%2C(id%3A27%2Ctext%3ARetail%2CselectionType%3AINCLUDED)))%2C(type%3ACOMPANY_HEADCOUNT%2Cvalues%3AList((id%3AA%2Ctext%3ASelf-employed%2CselectionType%3AINCLUDED)%2C(id%3AB%2Ctext%3A1-10%2CselectionType%3AINCLUDED)))%2C(type%3ACURRENT_TITLE%2Cvalues%3AList((id%3A35%2Ctext%3AFounder%2CselectionType%3AINCLUDED)%2C(id%3A1%2Ctext%3AOwner%2CselectionType%3AINCLUDED)))))&sessionId=5KcU9Y94T4%2BsyujlFQdsEg%3D%3D&viewAllFilters=true"
+      }
+    ],
+    "inputMode": "single",
+    "status": "Stopped",
+    "total": 225,
+    "duplicatesSkipped": 0,
+    "filePath": "C:\\Users\\Hassan\\Downloads\\sales-nav-scraper-v2\\data\\check-1772024870199.csv",
+    "startedAt": "2026-02-25T13:07:50.200Z",
+    "urlIndex": 0,
+    "pageIndex": 9,
+    "lastSuccessfulUrlIndex": 0,
+    "lastSuccessfulPageIndex": 9,
+    "urlNumber": 1,
+    "lushaSeconds": 0.67,
+    "contactoutSeconds": 0.01,
+    "extractSeconds": 0.68,
+    "totalSeconds": 10.4
+  }
+]
