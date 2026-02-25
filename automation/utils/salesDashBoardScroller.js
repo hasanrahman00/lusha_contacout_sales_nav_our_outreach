@@ -77,18 +77,18 @@ const salesDashBoardScroller = async (page, opts = {}) => {
 };
 
 const humanScrollSalesDashboard = async (page, opts = {}) => {
-  const steps = randInt(opts.minSteps || 7, opts.maxSteps || 10);
+  const steps = randInt(opts.minSteps || 2, opts.maxSteps || 3);
   return salesDashBoardScroller(page, {
     trackerSelector: opts.trackerSelector,
     scrollSelector: opts.scrollSelector,
     maxSteps: steps,
-    stepPx: opts.stepPx || 200,
-    minDelayMs: opts.minDelayMs || 200,
-    maxDelayMs: opts.maxDelayMs || 550,
+    stepPx: opts.stepPx || 300,
+    minDelayMs: opts.minDelayMs || 50,
+    maxDelayMs: opts.maxDelayMs || 150,
     highlight: opts.highlight || false,
     timeoutMs: opts.timeoutMs || 15000,
-    maxRounds: opts.maxRounds || 20,
-    bottomStallLimit: opts.bottomStallLimit || 4,
+    maxRounds: opts.maxRounds || 5,
+    bottomStallLimit: opts.bottomStallLimit || 2,
   });
 };
 

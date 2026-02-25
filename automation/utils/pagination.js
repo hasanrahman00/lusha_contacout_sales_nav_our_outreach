@@ -82,7 +82,7 @@ const clickNextPage = async (page, { timeoutMs = 15000, expectedNext = null } = 
       if (Date.now() - start > timeoutMs) {
         return { moved: false, reason: "page-change-timeout" };
       }
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(100);
     }
   } catch (error) {
     return { moved: false, reason: "page-change-timeout" };
@@ -98,7 +98,7 @@ const clickNextPage = async (page, { timeoutMs = 15000, expectedNext = null } = 
         if (Date.now() - start > timeoutMs) {
           return { moved: false, reason: "leadlist-timeout" };
         }
-        await page.waitForTimeout(200);
+        await page.waitForTimeout(100);
       }
     } catch (error) {
       return { moved: false, reason: "leadlist-timeout" };
@@ -137,7 +137,7 @@ const clickNextPageWithRetry = async (page, { timeoutMs = 15000, expectedNext = 
         } catch (error) {
           // ignore
         }
-        const retryDelay = 1000 + Math.random() * 1000;
+        const retryDelay = 500 + Math.random() * 500;
         await page.waitForTimeout(retryDelay);
 
         // On page-mismatch, try navigating via URL param
@@ -162,7 +162,7 @@ const clickNextPageWithRetry = async (page, { timeoutMs = 15000, expectedNext = 
       lastResult = { moved: false, reason: `error: ${error.message || error}` };
       console.log(`[pagination] attempt ${attempt}/${maxRetries} error: ${error.message || error}`);
       if (attempt < maxRetries) {
-        const retryDelay = 1000 + Math.random() * 1000;
+        const retryDelay = 500 + Math.random() * 500;
         await page.waitForTimeout(retryDelay);
       }
     }

@@ -1,5 +1,7 @@
 const state = {
   jobs: [],
+  inputMode: "single",
+  parsedUrls: null,
 };
 
 const listName = document.getElementById("listName");
@@ -14,6 +16,19 @@ const statRunning = document.getElementById("statRunning");
 const statCompleted = document.getElementById("statCompleted");
 const statFailed = document.getElementById("statFailed");
 const notifiedFailures = new Set();
+
+// CSV upload elements
+const tabSingle = document.getElementById("tabSingle");
+const tabCsv = document.getElementById("tabCsv");
+const singleUrlField = document.getElementById("singleUrlField");
+const csvUploadField = document.getElementById("csvUploadField");
+const csvFile = document.getElementById("csvFile");
+const uploadArea = document.getElementById("uploadArea");
+const fileSelected = document.getElementById("fileSelected");
+const fileNameEl = document.getElementById("fileName");
+const urlCountEl = document.getElementById("urlCount");
+const clearFileBtn = document.getElementById("clearFile");
+const csvFileError = document.getElementById("csvFileError");
 
 const showToast = (message) => {
   toast.textContent = message;
@@ -30,8 +45,13 @@ const formatSeconds = (value) => {
 
 const updateRunDisabled = (loading = false) => {
   const hasName = Boolean(listName.value.trim());
-  const hasUrl = Boolean(listUrl.value.trim());
-  const disabled = loading || !hasName || !hasUrl;
+  let hasInput = false;
+  if (state.inputMode === "single") {
+    hasInput = Boolean(listUrl.value.trim());
+  } else {
+    hasInput = Array.isArray(state.parsedUrls) && state.parsedUrls.length > 0;
+  }
+  const disabled = loading || !hasName || !hasInput;
   runScraper.disabled = disabled;
 };
 
@@ -46,6 +66,7 @@ const setButtonLoading = (loading) => {
 const clearErrors = () => {
   listNameError.textContent = "";
   listUrlError.textContent = "";
+  csvFileError.textContent = "";
   listName.classList.remove("error-border");
   listUrl.classList.remove("error-border");
 };
@@ -58,13 +79,114 @@ const validateInputs = () => {
     listName.classList.add("error-border");
     valid = false;
   }
-  if (!listUrl.value.trim()) {
+  if (state.inputMode === "single" && !listUrl.value.trim()) {
     listUrlError.textContent = "LinkedIn URL is required";
     listUrl.classList.add("error-border");
     valid = false;
   }
+  if (state.inputMode === "csv" && (!state.parsedUrls || state.parsedUrls.length === 0)) {
+    csvFileError.textContent = "Please upload a CSV file with URLs";
+    valid = false;
+  }
   return valid;
 };
+
+// --- Input Mode Tabs ---
+
+const switchInputMode = (mode) => {
+  state.inputMode = mode;
+  tabSingle.classList.toggle("active", mode === "single");
+  tabCsv.classList.toggle("active", mode === "csv");
+  singleUrlField.style.display = mode === "single" ? "" : "none";
+  csvUploadField.style.display = mode === "csv" ? "" : "none";
+  clearErrors();
+  updateRunDisabled(false);
+};
+
+tabSingle.addEventListener("click", () => switchInputMode("single"));
+tabCsv.addEventListener("click", () => switchInputMode("csv"));
+
+// --- CSV File Parsing ---
+
+const parseCsvFile = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/).filter((line) => line.trim());
+        if (lines.length < 2) {
+          reject(new Error("CSV must have a header row and at least one data row"));
+          return;
+        }
+        // Skip header (line 0)
+        const urls = [];
+        for (let i = 1; i < lines.length; i++) {
+          const parts = lines[i].split(",");
+          if (parts.length < 2) continue;
+          const urlNumber = parseInt(parts[0].trim(), 10);
+          const url = parts.slice(1).join(",").trim().replace(/^"|"$/g, "");
+          if (url && url.startsWith("http")) {
+            urls.push({ urlNumber: isNaN(urlNumber) ? i : urlNumber, url });
+          }
+        }
+        if (urls.length === 0) {
+          reject(new Error("No valid URLs found in CSV"));
+          return;
+        }
+        resolve(urls);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsText(file);
+  });
+};
+
+const handleFileSelect = async (file) => {
+  csvFileError.textContent = "";
+  try {
+    const urls = await parseCsvFile(file);
+    state.parsedUrls = urls;
+    fileNameEl.textContent = file.name;
+    urlCountEl.textContent = `${urls.length} URLs found`;
+    fileSelected.style.display = "";
+    uploadArea.style.display = "none";
+    updateRunDisabled(false);
+  } catch (err) {
+    csvFileError.textContent = err.message;
+    state.parsedUrls = null;
+  }
+};
+
+// --- File Upload Handlers ---
+
+uploadArea.addEventListener("click", () => csvFile.click());
+uploadArea.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  uploadArea.classList.add("dragover");
+});
+uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
+uploadArea.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadArea.classList.remove("dragover");
+  if (e.dataTransfer.files.length > 0) {
+    handleFileSelect(e.dataTransfer.files[0]);
+  }
+});
+csvFile.addEventListener("change", (e) => {
+  if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+});
+clearFileBtn.addEventListener("click", () => {
+  state.parsedUrls = null;
+  csvFile.value = "";
+  fileSelected.style.display = "none";
+  uploadArea.style.display = "";
+  updateRunDisabled(false);
+});
+
+// --- Stats ---
 
 const updateStats = () => {
   const jobs = state.jobs;
@@ -86,7 +208,7 @@ const renderJobs = () => {
   if (state.jobs.length === 0) {
     jobsBody.innerHTML = `
       <tr class="empty-row">
-        <td colspan="8">
+        <td colspan="9">
           <div class="empty-state">
             <div class="empty-icon">
               <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
@@ -109,9 +231,17 @@ const renderJobs = () => {
     const isRunning = job.status === "Running";
     const toggleIcon = isRunning ? icons.pause : icons.play;
     const toggleLabel = isRunning ? "Pause" : "Run";
+
+    // URL / Page info
+    const urlPageInfo =
+      job.urls && job.urls.length > 1
+        ? `URL ${(job.urlIndex || 0) + 1}/${job.urls.length} \u00B7 Pg ${job.pageIndex || 1}`
+        : `Page ${job.pageIndex || 1}`;
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><strong>${job.name}</strong></td>
+      <td class="mono">${urlPageInfo}</td>
       <td class="right mono">${job.total}</td>
       <td class="mono">${formatSeconds(job.lushaSeconds)}</td>
       <td class="mono">${formatSeconds(job.contactoutSeconds)}</td>
@@ -152,13 +282,18 @@ const runJob = async () => {
     return;
   }
   setButtonLoading(true);
+
+  const body = { listName: listName.value };
+  if (state.inputMode === "single") {
+    body.listUrl = listUrl.value;
+  } else {
+    body.urls = state.parsedUrls;
+  }
+
   const res = await fetch("/api/jobs/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      listName: listName.value,
-      listUrl: listUrl.value,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const data = await res.json();
@@ -168,6 +303,10 @@ const runJob = async () => {
   }
   listName.value = "";
   listUrl.value = "";
+  state.parsedUrls = null;
+  csvFile.value = "";
+  fileSelected.style.display = "none";
+  uploadArea.style.display = "";
   setButtonLoading(false);
   fetchJobs();
 };

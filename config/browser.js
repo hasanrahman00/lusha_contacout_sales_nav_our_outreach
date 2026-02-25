@@ -1,4 +1,4 @@
-const CDP_PORT = Number(process.env.CDP_PORT || 9222);
+const CDP_PORT = Number(process.env.CDP_PORT || 9223);
 const CDP_URL = process.env.CDP_URL || `http://127.0.0.1:${CDP_PORT}`;
 const CHROME_PATH =
   process.env.CHROME_PATH ||

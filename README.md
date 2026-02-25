@@ -12,3 +12,6 @@ Node.js + Selenium dashboard for Sales Navigator scraping jobs.
 
 - npm run dev
 - npm start
+
+
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9223 --user-data-dir="C:\Chrome_Prospeo_Clone"

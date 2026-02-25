@@ -15,6 +15,7 @@ const { humanScrollSalesDashboard } = require("../automation/utils/salesDashBoar
 const { clickNextPage, clickNextPageWithRetry, getPageInfo, getLeadListKey } = require("../automation/utils/pagination");
 const { waitForAnyVisible, waitForSalesNavReady } = require("../automation/utils/dom");
 const { disconnectBrowser } = require("./browser/launch");
+const { createTracker } = require("./pageTracker");
 
 const intervals = new Map();
 const sessions = new Map();
@@ -32,7 +33,7 @@ const createCsvPath = (listName) => {
   return path.join(dataDir, `${safe}-${stamp}.csv`);
 };
 
-const csvHeader = "Page Number,Full Name,First Name,Last Name,Title,Company Name,Person Address,LinkedIn URL,Website,Website_one";
+const csvHeader = "URL Number,Page Number,Full Name,First Name,Last Name,Title,Company Name,Person Address,LinkedIn URL,Website,Website_one";
 
 const escapeCsvValue = (value) => {
   const text = String(value ?? "");
@@ -45,6 +46,7 @@ const escapeCsvValue = (value) => {
 const toCsvRow = (record) => {
   const domains = Array.isArray(record.domains) ? record.domains : [];
   return [
+    escapeCsvValue(record.urlNumber ?? ""),
     escapeCsvValue(record.pageNumber ?? ""),
     escapeCsvValue(record.fullName),
     escapeCsvValue(record.firstName),
@@ -156,8 +158,8 @@ const detectContactoutLoginPanel = async (page) => {
   return false;
 };
 
-const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
-  const extractDelayMs = Number(process.env.EXTRACT_DELAY_MS || 200);
+const runPageExtraction = async ({ page, job, filePath, pageIndex, total, urlNumber }) => {
+  const extractDelayMs = Number(process.env.EXTRACT_DELAY_MS || 50);
   const timings = {
     preExtractMs: 0,
     scrollMs: 0,
@@ -180,7 +182,7 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
   // 2. Click Lusha badge to activate extension
   if (page) {
     try {
-      await clickLushaBadge(page, Number(process.env.LUSHA_BADGE_TIMEOUT_MS || 8000));
+      await clickLushaBadge(page, Number(process.env.LUSHA_BADGE_TIMEOUT_MS || 4000));
     } catch (error) {
       // keep going
     }
@@ -190,14 +192,14 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
   if (page) {
     const tScroll = Date.now();
     await humanScrollSalesDashboard(page, {
-      minSteps: Number(process.env.HUMAN_SCROLL_MIN_STEPS || 7),
-      maxSteps: Number(process.env.HUMAN_SCROLL_MAX_STEPS || 10),
-      stepPx: Number(process.env.HUMAN_SCROLL_STEP_PX || 200),
-      minDelayMs: Number(process.env.HUMAN_SCROLL_MIN_DELAY_MS || 200),
-      maxDelayMs: Number(process.env.HUMAN_SCROLL_MAX_DELAY_MS || 550),
+      minSteps: Number(process.env.HUMAN_SCROLL_MIN_STEPS || 2),
+      maxSteps: Number(process.env.HUMAN_SCROLL_MAX_STEPS || 3),
+      stepPx: Number(process.env.HUMAN_SCROLL_STEP_PX || 300),
+      minDelayMs: Number(process.env.HUMAN_SCROLL_MIN_DELAY_MS || 50),
+      maxDelayMs: Number(process.env.HUMAN_SCROLL_MAX_DELAY_MS || 150),
       timeoutMs: Number(process.env.HUMAN_SCROLL_TIMEOUT_MS || 15000),
-      maxRounds: Number(process.env.HUMAN_SCROLL_MAX_ROUNDS || 20),
-      bottomStallLimit: Number(process.env.HUMAN_SCROLL_BOTTOM_STALL_LIMIT || 4),
+      maxRounds: Number(process.env.HUMAN_SCROLL_MAX_ROUNDS || 5),
+      bottomStallLimit: Number(process.env.HUMAN_SCROLL_BOTTOM_STALL_LIMIT || 2),
     });
     timings.scrollMs = Date.now() - tScroll;
   }
@@ -211,7 +213,7 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
   let lushaSeconds = 0;
   try {
     if (page) {
-      const lushaVisible = await hasLushaContacts(page, 1200);
+      const lushaVisible = await hasLushaContacts(page, 800);
       if (!lushaVisible) {
         const lushaLogin = await detectLushaLoginPanel(page);
         if (lushaLogin) {
@@ -226,7 +228,7 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
 
       // 6. Minimize Lusha
       const tMin = Date.now();
-      await clickLushaMinimize(page, { timeoutMs: 1500, preferFrame: true });
+      await clickLushaMinimize(page, { timeoutMs: 800, preferFrame: true });
       timings.lushaMinimizeMs = Date.now() - tMin;
     }
   } catch (error) {
@@ -242,10 +244,10 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
     if (page) {
       const tClick = Date.now();
       await clickContactoutBadge(page, {
-        timeoutMs: Number(process.env.CONTACTOUT_CLICK_TIMEOUT_MS || 4000),
+        timeoutMs: Number(process.env.CONTACTOUT_CLICK_TIMEOUT_MS || 1500),
         skipReadyWait: true,
-        perFrameWaitMs: Number(process.env.CONTACTOUT_FRAME_WAIT_MS || 150),
-        mainDocWaitMs: Number(process.env.CONTACTOUT_MAIN_WAIT_MS || 300),
+        perFrameWaitMs: Number(process.env.CONTACTOUT_FRAME_WAIT_MS || 50),
+        mainDocWaitMs: Number(process.env.CONTACTOUT_MAIN_WAIT_MS || 100),
         postMinimizeDelayMs: Number(process.env.CONTACTOUT_MINIMIZE_DELAY_MS || 50),
         maxFrames: Number(process.env.CONTACTOUT_MAX_FRAMES || 6),
       });
@@ -256,7 +258,7 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
         timeoutMs: Number(process.env.CONTACTOUT_TIMEOUT_MS || 10000),
         debug: true,
         minResults: 1,
-        retryDelayMs: Number(process.env.CONTACTOUT_RETRY_DELAY_MS || 500),
+        retryDelayMs: Number(process.env.CONTACTOUT_RETRY_DELAY_MS || 200),
         maxRetries: Number(process.env.CONTACTOUT_MAX_RETRIES || 2),
         expectedLeadKey,
       }).catch(() => []);
@@ -266,7 +268,7 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
 
       // 7.5. Minimize ContactOut sidebar
       try {
-        await minimizeContactout(page, { timeoutMs: 2000 });
+        await minimizeContactout(page, { timeoutMs: 800 });
       } catch (error) {
         // non-critical, continue
       }
@@ -277,17 +279,11 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
     }
   }
 
-  // 7.6. Random sleep 2-3 seconds before pagination
-  if (page) {
-    const sleepMs = 2000 + Math.random() * 1000;
-    console.log(`[flow] sleeping ${Math.round(sleepMs)}ms before pagination`);
-    await page.waitForTimeout(sleepMs);
-  }
-
   // 8. Write all records to CSV
   let added = 0;
   const tCsv = Date.now();
   for (const record of records) {
+    record.urlNumber = urlNumber;
     record.pageNumber = pageIndex;
     appendCsvRow(filePath, toCsvRow(record));
     added += 1;
@@ -312,9 +308,8 @@ const runPageExtraction = async ({ page, job, filePath, pageIndex, total }) => {
   return { added, total: nextTotal };
 };
 
-const runPaginatedExtraction = async ({ page, job, filePath, initialTotal }) => {
+const runPaginatedExtraction = async ({ page, job, filePath, initialTotal, tracker }) => {
   let total = initialTotal || 0;
-  let pageIndex = 1;
   const maxPagesEnv = process.env.MAX_PAGES;
   const maxPages = Number.isFinite(Number(maxPagesEnv)) ? Number(maxPagesEnv) : 100;
   let lastPageNumber = null;
@@ -330,23 +325,29 @@ const runPaginatedExtraction = async ({ page, job, filePath, initialTotal }) => 
       return { total, failed: false };
     }
 
+    const pageIndex = tracker.currentPageIndex();
+    const urlNumber = tracker.currentUrlNumber();
+
     let result;
     try {
-      result = await runPageExtraction({ page, job, filePath, pageIndex, total });
+      result = await runPageExtraction({ page, job, filePath, pageIndex, total, urlNumber });
     } catch (error) {
       const message = String(error.message || error);
-      updateJob(job.id, { status: "Failed", error: message });
+      updateJob(job.id, { status: "Failed", error: message, ...tracker.getPosition() });
       await disconnectBrowser();
       return { total, failed: true, error: message };
     }
     total = result.total;
+    // Persist position after each successful page
+    updateJob(job.id, { ...tracker.getPosition(), total });
+
     if (!page) {
       break;
     }
-    console.log(`[pagination] page ${pageIndex} done, moving next...`);
+    console.log(`[pagination] url:${urlNumber} page:${pageIndex} done, moving next...`);
     const expectedNext = lastPageNumber ? lastPageNumber + 1 : null;
     const next = await clickNextPageWithRetry(page, {
-      timeoutMs: Number(process.env.NEXT_PAGE_TIMEOUT_MS || 15000),
+      timeoutMs: Number(process.env.NEXT_PAGE_TIMEOUT_MS || 10000),
       expectedNext,
       maxRetries: 3,
     });
@@ -361,7 +362,7 @@ const runPaginatedExtraction = async ({ page, job, filePath, initialTotal }) => 
       if (reason.includes("page-mismatch")) {
         // Page mismatch after retries = data integrity risk, stop gracefully
         const errorMessage = `Pagination stopped after retries: ${reason}`;
-        updateJob(job.id, { status: "Failed", error: errorMessage });
+        updateJob(job.id, { status: "Failed", error: errorMessage, ...tracker.getPosition() });
         return { total, failed: true, error: errorMessage };
       }
       // For timeouts, try to continue from current position
@@ -369,58 +370,107 @@ const runPaginatedExtraction = async ({ page, job, filePath, initialTotal }) => 
       const currentInfo = await getPageInfo(page).catch(() => null);
       if (currentInfo?.pageNumber && currentInfo.pageNumber > (lastPageNumber || 0)) {
         lastPageNumber = currentInfo.pageNumber;
-        pageIndex += 1;
+        tracker.advancePage();
         continue;
       }
       const errorMessage = `Pagination failed after 3 retries: ${reason}`;
-      updateJob(job.id, { status: "Failed", error: errorMessage });
+      updateJob(job.id, { status: "Failed", error: errorMessage, ...tracker.getPosition() });
       return { total, failed: true, error: errorMessage };
     }
     // Strict page tracking - only update on confirmed navigation
     if (next.pageNumber && lastPageNumber && next.pageNumber !== lastPageNumber + 1) {
       console.log(`[pagination] page mismatch after move: expected ${lastPageNumber + 1}, got ${next.pageNumber}`);
       const errorMessage = `Pagination page mismatch: expected ${lastPageNumber + 1}, got ${next.pageNumber}`;
-      updateJob(job.id, { status: "Failed", error: errorMessage });
+      updateJob(job.id, { status: "Failed", error: errorMessage, ...tracker.getPosition() });
       return { total, failed: true, error: errorMessage };
     }
     lastPageNumber = next.pageNumber || (lastPageNumber ? lastPageNumber + 1 : null);
-    pageIndex += 1;
+    tracker.advancePage();
   }
-  if (maxPagesEnv && pageIndex > maxPages) {
+  if (maxPagesEnv && tracker.currentPageIndex() > maxPages) {
     console.log(`[pagination] stopped at MAX_PAGES=${maxPages}`);
   }
   return { total, failed: false };
 };
 
-const startJob = async ({ listName, listUrl }) => {
+const startJob = async ({ listName, listUrl, urls, inputMode }) => {
   const filePath = createCsvPath(listName);
   ensureCsvHeader(filePath, csvHeader);
-  const job = createJob({ listName, listUrl, filePath });
+
+  // Normalize: wrap single URL into array format for uniform handling
+  const normalizedUrls = urls || [{ urlNumber: 1, url: listUrl }];
+  const effectiveInputMode = inputMode || "single";
+
+  const job = createJob({
+    listName,
+    listUrl: listUrl || normalizedUrls[0]?.url || "",
+    urls: normalizedUrls,
+    inputMode: effectiveInputMode,
+    filePath,
+  });
+
+  const tracker = createTracker(job);
+
   try {
-    const session = await startScraper(job);
+    const session = await startScraper({ ...job, listUrl: tracker.currentUrl() });
     sessions.set(job.id, session);
   } catch (error) {
     updateJob(job.id, { status: "Failed", error: String(error.message || error) });
     throw error;
   }
-  const session = sessions.get(job.id);
-  const page = session?.page;
-  const result = await runPaginatedExtraction({
-    page,
-    job,
-    filePath,
-    initialTotal: 0,
-  });
-  updateJob(job.id, { total: result.total });
-  if (result.failed) {
-    return updateJob(job.id, { status: "Failed", error: result.error || "Pagination failed" });
+
+  let totalAccumulated = 0;
+
+  // Loop over each URL
+  while (!tracker.isFinished()) {
+    const currentJob = getJob(job.id);
+    if (currentJob && currentJob.status === "Stopped") break;
+
+    const session = sessions.get(job.id);
+    const page = session?.page;
+
+    // For subsequent URLs, navigate to the next URL
+    if (tracker.currentUrlIndex() > 0) {
+      if (page) {
+        console.log(`[multi-url] navigating to URL ${tracker.currentUrlNumber()} (${tracker.currentUrlIndex() + 1}/${normalizedUrls.length})`);
+        await page.goto(tracker.currentUrl(), { waitUntil: "domcontentloaded" });
+        await waitForSalesNavReady(page).catch(() => null);
+      }
+    }
+
+    updateJob(job.id, { ...tracker.getPosition() });
+
+    const result = await runPaginatedExtraction({
+      page,
+      job,
+      filePath,
+      initialTotal: totalAccumulated,
+      tracker,
+    });
+
+    totalAccumulated = result.total;
+
+    if (result.failed) {
+      return updateJob(job.id, {
+        status: "Failed",
+        error: result.error || "Extraction failed",
+        total: totalAccumulated,
+        ...tracker.getPosition(),
+      });
+    }
+
+    // Advance to next URL
+    const advanced = tracker.advanceUrl();
+    if (!advanced) break; // All URLs processed
   }
+
   const keepBrowser = String(process.env.KEEP_BROWSER_AFTER_JOB || "true").toLowerCase() === "true";
+  const session = sessions.get(job.id);
   if (!keepBrowser && session) {
     await stopScraper(session);
     sessions.delete(job.id);
   }
-  return updateJob(job.id, { status: "Completed" });
+  return updateJob(job.id, { status: "Completed", total: totalAccumulated });
 };
 
 const resumeJob = async (id) => {
@@ -432,31 +482,87 @@ const resumeJob = async (id) => {
     return job;
   }
   ensureCsvHeader(job.filePath, csvHeader);
+
+  // Reconstruct tracker from saved position
+  const tracker = createTracker(job);
+  const resumeUrl = tracker.currentUrl();
+
   try {
-    const session = await startScraper(job);
+    const session = await startScraper({ ...job, listUrl: resumeUrl });
     sessions.set(job.id, session);
   } catch (error) {
     updateJob(job.id, { status: "Failed", error: String(error.message || error) });
     throw error;
   }
+
+  updateJob(job.id, { status: "Running" });
+
   const session = sessions.get(job.id);
   const page = session?.page;
-  const result = await runPaginatedExtraction({
-    page,
-    job,
-    filePath: job.filePath,
-    initialTotal: job.total || 0,
-  });
-  updateJob(job.id, { total: result.total });
-  if (result.failed) {
-    return updateJob(job.id, { status: "Failed", error: result.error || "Pagination failed" });
+
+  // If resuming mid-URL at a specific page, navigate directly to that page
+  if (page && tracker.currentPageIndex() > 1) {
+    try {
+      const currentUrl = new URL(resumeUrl);
+      currentUrl.searchParams.set("page", String(tracker.currentPageIndex()));
+      console.log(`[resume] navigating to URL ${tracker.currentUrlNumber()}, page ${tracker.currentPageIndex()}`);
+      await page.goto(currentUrl.toString(), { waitUntil: "domcontentloaded" });
+      await waitForSalesNavReady(page).catch(() => null);
+    } catch (error) {
+      console.log(`[resume] failed to navigate to page ${tracker.currentPageIndex()}, starting from page 1`);
+      tracker.setPosition(tracker.currentUrlIndex(), 1);
+    }
   }
+
+  let totalAccumulated = job.total || 0;
+  const savedUrlIndex = job.urlIndex || 0;
+  const normalizedUrls = job.urls || [{ urlNumber: 1, url: job.listUrl }];
+
+  // Continue from current URL through remaining URLs
+  while (!tracker.isFinished()) {
+    const currentJob = getJob(job.id);
+    if (currentJob && currentJob.status === "Stopped") break;
+
+    // If not the URL we resumed on, navigate to it
+    if (tracker.currentUrlIndex() > savedUrlIndex) {
+      if (page) {
+        console.log(`[resume] navigating to URL ${tracker.currentUrlNumber()} (${tracker.currentUrlIndex() + 1}/${normalizedUrls.length})`);
+        await page.goto(tracker.currentUrl(), { waitUntil: "domcontentloaded" });
+        await waitForSalesNavReady(page).catch(() => null);
+      }
+    }
+
+    updateJob(job.id, { ...tracker.getPosition() });
+
+    const result = await runPaginatedExtraction({
+      page,
+      job,
+      filePath: job.filePath,
+      initialTotal: totalAccumulated,
+      tracker,
+    });
+
+    totalAccumulated = result.total;
+
+    if (result.failed) {
+      return updateJob(job.id, {
+        status: "Failed",
+        error: result.error || "Extraction failed",
+        total: totalAccumulated,
+        ...tracker.getPosition(),
+      });
+    }
+
+    const advanced = tracker.advanceUrl();
+    if (!advanced) break;
+  }
+
   const keepBrowser = String(process.env.KEEP_BROWSER_AFTER_JOB || "true").toLowerCase() === "true";
   if (!keepBrowser && session) {
     await stopScraper(session);
     sessions.delete(job.id);
   }
-  return updateJob(job.id, { status: "Completed" });
+  return updateJob(job.id, { status: "Completed", total: totalAccumulated });
 };
 
 const stopJob = async (id) => {

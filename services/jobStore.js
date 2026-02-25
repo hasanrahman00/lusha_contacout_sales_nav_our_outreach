@@ -28,18 +28,22 @@ function loadJobsFromDisk() {
 
 loadJobsFromDisk();
 
-const createJob = ({ listName, listUrl, filePath }) => {
+const createJob = ({ listName, listUrl, urls, inputMode, filePath }) => {
   const id = uuid();
   const name = `${listName} #${id.slice(0, 8)}`;
   const job = {
     id,
     name,
     listName,
-    listUrl,
+    listUrl: listUrl || (urls && urls[0] ? urls[0].url : ""),
+    urls: urls || null,
+    inputMode: inputMode || "single",
     status: "Running",
     total: 0,
     filePath,
     startedAt: new Date().toISOString(),
+    urlIndex: 0,
+    pageIndex: 1,
   };
   jobs.set(id, job);
   saveJobsToDisk();
